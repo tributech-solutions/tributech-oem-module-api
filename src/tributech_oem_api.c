@@ -5,6 +5,8 @@
 char configuration[CONFIGURATION_SIZE];		// received configuration
 bool configuration_received;				// bit if configuration still received
 uint32_t get_config_transactionnr;			// transaction number of getConfig command
+uint32_t transaction_nr_dec;				// transaction number decimal
+char transaction_nr_string[7];				// transaction number string
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // api command - get configuration
@@ -214,6 +216,19 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id)
 	free(t);
 
 	return false;
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// increase transaction number
+void increase_transaction_nr(void)
+{
+	transaction_nr_dec++;
+	if (transaction_nr_dec >= 1000000)
+	{
+		transaction_nr_dec = 0;
+	}
+	memset(transaction_nr_string,0x0,7);
+	sprintf(transaction_nr_string, "%"PRIu32"",transaction_nr_dec);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

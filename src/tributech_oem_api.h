@@ -20,6 +20,7 @@
 
 extern bool configuration_received;			// bit if configuration still received
 extern uint32_t get_config_transactionnr;	// transaction number of getConfig command
+extern char transaction_nr_string[7];		// transaction number string
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // api command - get configuration
@@ -38,6 +39,10 @@ uint8_t parse_oem_response_save_configuration(char * data, uint16_t cmd_len);
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // parse ValueMetaDataID from configuration - return true if success
 uint8_t get_valueMetaDataId(char * stream_name, char * id);
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// increase transaction number
+void increase_transaction_nr(void);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // String To LowerCase and UpperCase
