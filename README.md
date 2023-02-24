@@ -10,8 +10,8 @@ Tributech OEM Module API is a C library to use the OEM Module UART API in a simp
 
 ## compatibility
 
-|  | OEM V1.3 | OEM V2.0 |
-| ----------- | ----------- |
+| Version | OEM V1.3 | OEM V2.0 |
+| ----------- | ----------- | ----------- |
 | API V1.0 | yes | yes |
 
 ## get configuration
