@@ -9,31 +9,29 @@ Tributech OEM Module API is a C library to use the OEM Module UART API in a simp
 # API
 
 ## get configuration
-To receive the oem module configuration with all streams you have to send the GetConfiguration command.
+To receive the oem module configuration with all streams you have to build the GetConfiguration command.
 ```C
 int build_get_configuration(char * result, char * transaction_id);
 ```
-* The parameter 'result' is the build string command which must be send via uart to the oem module.
+* The parameter 'result' is the build string  which must be send to the oem module via uart.
 * The parameter 'transaction_id' is the transaction id.
 * The return value is '1' if success or '0' if the transaction_id is wrong.
 
-To convert from base64 to plain the following function is used:
-
 ## provide values
-To send a stream value to the oem module you have to send the provideValues command.
+To send a stream value to the oem module you have to build the provideValues command.
 ```C
 int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
 ```
-* The parameter 'result' is the build string command which must be send via uart to the oem module.
+* The parameter 'result' is the build string which must be send to the oem module via uart.
 * The parameter 'transaction_id' is the transaction id.
-* The parameter 'id' is the valueMetaDataId of the stream.
-* The parameter 'data' is the BASE64 string of the value.
+* The parameter 'id' is the valueMetaDataId of the stream (Stream ID).
+* The parameter 'data' is the BASE64 encoded string of the value.
 * The parameter 'timestamp' is the timestamp. If '0' then the oem module uses it's own actual time.
 * The return value is '1' if success or '0' if the timestamp is wrong.
 
 ## parse and save received configuration
-To save the configuration you have to execute this command for parsing and saving the configuration from the response.
-This command only has to be executed if the 'get_valueMetaDataId' command is used.
+To save the configuration you have to execute this function for parsing and saving the configuration from the response.
+Use this function if you want to use the 'get_valueMetaDataId' function, otherwise you don't need it.
 ```C
 uint8_t parse_oem_response_save_configuration(char * data, uint16_t cmd_len);
 ```
@@ -42,7 +40,7 @@ uint8_t parse_oem_response_save_configuration(char * data, uint16_t cmd_len);
 * The return value is '1' if success or '0' if error.
 
 ## parse and save received configuration
-This command searches in the saved configuration for the stream name and returns the stream id.
+This function searches in the saved configuration for the stream name and returns the stream id.
 ```C
 uint8_t get_valueMetaDataId(char * stream_name, char * id);
 ```
@@ -50,14 +48,14 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id);
 * The parameter 'id' is the valueMetaDataId of the stream.
 * The return value is '1' if success or '0' if error.
 
-## parse and save received configuration
+## increase the transaction number
 This functions increases the 'transaction_nr_dec' by one and converts it to string 'transaction_nr_string'.
 ```C
 void increase_transaction_nr(void);
 ```
 
 ## lowercase and uppercase string
-These function converts uppercase letters to lowercase and lowercase letters to uppercase.
+These functions convert uppercase letters to lowercase and lowercase letters to uppercase.
 ```C
 char * to_lower_case(char * text);
 char * to_upper_case(char * text);
@@ -73,21 +71,24 @@ uint32_t min2_uint32_t (uint32_t value1, uint32_t value2);
 * The parameters 'value1' and 'value2' are the values which will be compared.
 * Returns the minimum value of the two.
 
-## example without parsing the configuration for stream ids
+## example without parsing the configuration
+This example code sends every 10 seconds the temperature value to the oem module.
 ```C
+#include "base64.h"
+#include "tributech_oem_api.h"
+
 int main(void)
 {
 	time_t last_command_sent;
 
 	char *base64_string;      			// pointer to base64 string
 	char *provide_values_message;		// provide values output message
-	float temperature = 15.5;
-	bool send_temperature_next = true;
+	float temperature = 15.5;			// temperature value
 	
 	while(1U)
 	{
 		//++++++++++++++++++++++++++++++++++++++++++++++++++++
-		// ids received -> publish values
+		// publish values every 10 seconds
 		if(last_command_sent + 10 < get_time())
 		{
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -95,17 +96,21 @@ int main(void)
 			increase_transaction_nr();
 
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
-			// build base64 string from value and build send string
-			provide_values_message = calloc(200,sizeof(char));
+			// build base64 string from value
 			base64_string = calloc(20,sizeof(char));
-			
 			bintob64(base64_string,&temperature, sizeof(float));
+			
+			//++++++++++++++++++++++++++++++++++++++++++++++++++++
+			// build ProvideValues command
+			provide_values_message = calloc(200,sizeof(char));
 			build_provide_values(provide_values_message,transaction_nr_string,"3b619323-7a61-465b-88df-24297efd5dda",base64_string,"0");
 
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
-			// output via uart
+			// send command via uart
 			uart_output(&UART_OEM,provide_values_message);
 
+			//++++++++++++++++++++++++++++++++++++++++++++++++++++
+			// release memory
 			delay_ms(100);
 			free(base64_string);
 			free(provide_values_message);
@@ -120,7 +125,11 @@ int main(void)
 ```
 
 ## example with parsing the configuration for stream ids
+This example code sends every 10 seconds the temperature or pressure value to the oem module.
 ```C
+#include "base64.h"
+#include "tributech_oem_api.h"
+
 int main(void)
 {
 	time_t last_command_sent;
@@ -163,7 +172,7 @@ int main(void)
 			}
 		}
 		//++++++++++++++++++++++++++++++++++++++++++++++++++++
-		// ids received -> publish values
+		// ids received -> publish values every 10 seconds
 		else if(last_command_sent + 10 < get_time() && stream_ids_received)
 		{
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -171,29 +180,35 @@ int main(void)
 			increase_transaction_nr();
 
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
-			// build base64 string from value and build send string
+			// alloc base64 string and provideValues string in memory
+			base64_string = calloc(20,sizeof(char));
 			provide_values_message = calloc(200,sizeof(char));
+			
+			//++++++++++++++++++++++++++++++++++++++++++++++++++++
+			// send temperature or pressure
 			if (send_temperature_next)
 			{
-				base64_string = calloc(20,sizeof(char));
 				bintob64(base64_string,&temperature, sizeof(float));
+			
 				build_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_temperature,base64_string,"0");
 
 				send_temperature_next = false;
 			}
 			else
 			{
-				base64_string = calloc(20,sizeof(char));
 				bintob64(base64_string,&pressure, sizeof(float));
+				
 				build_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_pressure,base64_string,"0");
 
 				send_temperature_next = true;
 			}
 
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
-			// send via uart
+			// send command via uart
 			uart_output(&UART_OEM,provide_values_message);
 
+			//++++++++++++++++++++++++++++++++++++++++++++++++++++
+			// release memory
 			delay_ms(100);
 			free(base64_string);
 			free(provide_values_message);
@@ -219,6 +234,14 @@ int main(void)
 		}
 	}
 }
-	
-	
+```
+## Base boards example projects
+Base boards:
+
+- [Nordic nRF52840-DK](https://github.com/tributech-solutions/tributech-oem-module-iot-kit-examples/tree/main/examble-nordic-nRF52840)
+- [Infineon XMC4700 Relax Kit](https://github.com/tributech-solutions/tributech-oem-module-iot-kit-examples/tree/main/example-infineon-xmc4700)
+- [Arduino UNO R3](https://github.com/tributech-solutions/tributech-oem-module-iot-kit-examples/tree/main/example-arduino-unoR3)
+
+For further information about the Tributech OEM module please visite our documentation homepage [docs.tributech.io](https://docs.tributech.io/docs/oem_module/overview).
+
 				  
