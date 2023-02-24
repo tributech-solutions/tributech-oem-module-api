@@ -2,12 +2,16 @@
 
 Tributech OEM Module API is a C library to use the OEM Module UART API in a simpler way.
 
+# Communication flow - sequence diagramm
+
+![Sequence Diagram](doc/images/SequenceDiagramOEM.png)
+
 # API
 
 ## get configuration
 To receive the oem module configuration with all streams you have to send the GetConfiguration command.
 ```C
-int send_get_configuration(char * result, char * transaction_id);
+int build_get_configuration(char * result, char * transaction_id);
 ```
 * The parameter 'result' is the build string command which must be send via uart to the oem module.
 * The parameter 'transaction_id' is the transaction id.
@@ -18,7 +22,7 @@ To convert from base64 to plain the following function is used:
 ## provide values
 To send a stream value to the oem module you have to send the provideValues command.
 ```C
-int send_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
+int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
 ```
 * The parameter 'result' is the build string command which must be send via uart to the oem module.
 * The parameter 'transaction_id' is the transaction id.
@@ -93,10 +97,10 @@ int main(void)
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
 			// build base64 string from value and build send string
 			provide_values_message = calloc(200,sizeof(char));
-
 			base64_string = calloc(20,sizeof(char));
+			
 			bintob64(base64_string,&temperature, sizeof(float));
-			send_provide_values(provide_values_message,transaction_nr_string,"3b619323-7a61-465b-88df-24297efd5dda",base64_string,"0");
+			build_provide_values(provide_values_message,transaction_nr_string,"3b619323-7a61-465b-88df-24297efd5dda",base64_string,"0");
 
 			//++++++++++++++++++++++++++++++++++++++++++++++++++++
 			// output via uart
@@ -140,7 +144,7 @@ int main(void)
 		{
 			if (last_command_sent + 10 < get_time())
 			{
-				send_get_configuration(send_message,"1");		// generate getConfiguration command
+				build_get_configuration(send_message,"1");		// generate getConfiguration command
 				uart_output(&UART_OEM,send_message);			// send to uart
 				get_config_transactionnr = 1;					// save getConfiguration transaction number
 				last_command_sent = get_time();
@@ -173,7 +177,7 @@ int main(void)
 			{
 				base64_string = calloc(20,sizeof(char));
 				bintob64(base64_string,&temperature, sizeof(float));
-				send_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_temperature,base64_string,"0");
+				build_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_temperature,base64_string,"0");
 
 				send_temperature_next = false;
 			}
@@ -181,7 +185,7 @@ int main(void)
 			{
 				base64_string = calloc(20,sizeof(char));
 				bintob64(base64_string,&pressure, sizeof(float));
-				send_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_pressure,base64_string,"0");
+				build_provide_values(provide_values_message,transaction_nr_string,valuemetadataid_pressure,base64_string,"0");
 
 				send_temperature_next = true;
 			}
