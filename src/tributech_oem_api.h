@@ -23,14 +23,14 @@ extern uint32_t get_config_transactionnr;	// transaction number of getConfig com
 extern char transaction_nr_string[7];		// transaction number string
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// api command - get configuration
+// build api command - get configuration
 // return value 0..wrong transaction id, 1..success
-int send_get_configuration(char * result, char * transaction_id);
+int build_get_configuration(char * result, char * transaction_id);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// api command - provide values
+// build api command - provide values
 // return value 0..wrong timestamp, 1..success
-int send_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
+int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // parse oem response and save configuration - return true if success

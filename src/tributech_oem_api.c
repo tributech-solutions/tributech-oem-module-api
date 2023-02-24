@@ -9,8 +9,8 @@ uint32_t transaction_nr_dec;				// transaction number decimal
 char transaction_nr_string[7];				// transaction number string
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// api command - get configuration
-int send_get_configuration(char * result, char * transaction_id)
+// build api command - get configuration
+int build_get_configuration(char * result, char * transaction_id)
 {
 	if (strcmp(transaction_id,"") == 0)
 	{
@@ -23,8 +23,8 @@ int send_get_configuration(char * result, char * transaction_id)
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// api command - provide values
-int send_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp)
+// build api command - provide values
+int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp)
 {
 	if (strcmp(timestamp,"") == 0)
 	{
