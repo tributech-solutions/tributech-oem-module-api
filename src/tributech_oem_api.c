@@ -1,6 +1,6 @@
 #define CONFIGURATION_SIZE 4096				// configuration size
 
-#include <tributech_oem_api.h>
+#include "tributech_oem_api.h"
 
 char configuration[CONFIGURATION_SIZE];		// received configuration
 bool configuration_received;				// bit if configuration still received
@@ -45,7 +45,7 @@ uint8_t parse_oem_response_save_configuration(char * data, uint16_t cmd_len)
 	jsmntok_t *t; 						// tokens
 	char * key_name;					// object key name
 	uint8_t length;						// length of key name
-	uint32_t received_transactionnr;	// received transaction number
+	uint32_t received_transactionnr = 0;	// received transaction number
 
 	if (cmd_len > CONFIGURATION_SIZE)
 	{
