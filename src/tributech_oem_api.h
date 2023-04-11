@@ -28,9 +28,9 @@ extern char transaction_nr_string[7];		// transaction number string
 int build_get_configuration(char * result, char * transaction_nr);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// build api command - provide values
+// build api command - provide value
 // return value 0..wrong timestamp, 1..success
-int build_provide_values(char * result, char * transaction_nr, char * id, char * data, char * timestamp);
+int build_provide_value(char * result, char * transaction_nr, char * id, char * data, char * timestamp);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // build api command - get_time
