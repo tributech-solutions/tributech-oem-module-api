@@ -10,31 +10,50 @@ Tributech OEM Module API is a C library to use the OEM Module UART API in a simp
 
 ## compatibility
 
-| Version | OEM V1.3 | OEM V2.0 |
-| ----------- | ----------- | ----------- |
-| API V1.0 | yes | yes |
-| API V1.1 | yes | yes |
+| Version | OEM V1.3 | OEM V2.0 | OEM V3.0 | OEM V3.1 | OEM V3.2 |
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| API V1.0 | yes | yes | yes | yes | no |
+| API V1.1 | yes | yes | yes | yes | no |
+| API v1.2 | no | no | no | no | yes |
 
 ## get configuration
 To receive the oem module configuration with all streams you have to build the GetConfiguration command.
 ```C
-int build_get_configuration(char * result, char * transaction_id);
+int build_get_configuration(char * result, char * transaction_nr);
 ```
 * The parameter 'result' is the build string  which must be send to the oem module via uart.
-* The parameter 'transaction_id' is the transaction id.
-* The return value is '1' if success or '0' if the transaction_id is wrong.
+* The parameter 'transaction_nr' is the transaction number.
+* The return value is '1' if success or '0' if the transaction_nr is wrong.
 
-## provide values
-To send a stream value to the oem module you have to build the provideValues command.
+## provide value
+To send a stream value to the OEM module you have to build the provideValue command.
 ```C
-int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp);
+int build_provide_value(char * result, char * transaction_nr, char * id, char * data, char * timestamp);
 ```
 * The parameter 'result' is the build string which must be send to the oem module via uart.
-* The parameter 'transaction_id' is the transaction id.
+* The parameter 'transaction_nr' is the transaction number.
 * The parameter 'id' is the valueMetaDataId of the stream (Stream ID).
 * The parameter 'data' is the BASE64 encoded string of the value.
 * The parameter 'timestamp' is the timestamp. If '0' then the oem module uses it's own actual time.
 * The return value is '1' if success or '0' if the timestamp is wrong.
+
+## get time
+To send the get_time command to the Tributech OEM you have to build the getTime command.
+```C
+int build_get_time(char * result, char * transaction_nr)
+```
+* The parameter 'result' is the build string which must be send to the oem module via uart.
+* The parameter 'transaction_nr' is the transaction number.
+* The return value is '1' if success or '0' if the transaction_nr is wrong.
+
+## get status
+To send the get_status command to the Tributech OEM you have to build the getStatus command.
+```C
+int build_get_status(char * result, char * transaction_nr);
+```
+* The parameter 'result' is the build string which must be send to the oem module via uart.
+* The parameter 'transaction_nr' is the transaction number.
+* The return value is '1' if success or '0' if the transaction_nr is wrong.
 
 ## parse and save received configuration
 To save the configuration you have to execute this function for parsing and saving the configuration from the response.
@@ -54,6 +73,24 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id);
 * The parameter 'stream_name' is the name of the stream.
 * The parameter 'id' is the valueMetaDataId of the stream.
 * The return value is '1' if success or '0' if error.
+
+## parse and search for timestamp
+This function parses and extracts the timestamp from the get_time command response and returns it in uint64_t.
+```C
+uint64_t parse_get_time(char * data, uint16_t cmd_len);
+```
+* The parameter 'data' is the response of the oem module.
+* The parameter 'cmd_len' is the length of the response message.
+* The return value is either '0' if the OEm is not connected to the server or a positive number which represents a timstamp in nanoseconds since 1/1/1970.
+
+## parse and sreach for the connection status
+This function parses and extracts the connection status of the OEM from the get_status command repsonse and returns it.
+```C
+uint8_t parse_get_status(char * data, uint16_t cmd_len);
+```
+* The parameter 'data' is the response of the oem module.
+* The parameter 'cmd_len' is the length of the response message.
+* The return value represents the connection status of the OEM and can be either 0 = offline, 1 = online, 2 = subscribed to the node. The full OEM functionalities are only available if the connection status shows 2.
 
 ## increase the transaction number
 This functions increases the 'transaction_nr_dec' by one and converts it to string 'transaction_nr_string'.
