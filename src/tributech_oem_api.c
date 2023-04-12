@@ -10,28 +10,61 @@ char transaction_nr_string[7];				// transaction number string
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // build api command - get configuration
-int build_get_configuration(char * result, char * transaction_id)
+int build_get_configuration(char * result, char * transaction_nr)
 {
-	if (strcmp(transaction_id,"") == 0)
+	if (strcmp(transaction_nr,"") == 0)
 	{
 		return 0;
 	}
 
-	sprintf(result,"{\"TransactionNr\": %s, \"Operation\": \"GetConfiguration\"}\r\n",transaction_id);
+	sprintf(result,"{\"TransactionNr\": %s, \"Operation\": \"GetConfiguration\"}\r\n",transaction_nr);
 
 	return 1;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// build api command - provide values
-int build_provide_values(char * result, char * transaction_id, char * id, char * data, char * timestamp)
+// build api command - provide value
+int build_provide_value(char * result, char * transaction_nr, char * id, char * data, char * timestamp)
 {
 	if (strcmp(timestamp,"") == 0)
 	{
 		return 0;
 	}
 
-	sprintf(result, "{\"TransactionNr\": %s,\"Operation\": \"ProvideValues\",\"ValueMetadataId\": \"%s\",\"Values\": [{\"Timestamp\": %s,\"Value\": \"%s\"}]}\r\n" , transaction_id, id, timestamp, data);
+	if (strcmp(transaction_nr, "") == 0)
+	{
+		return 0;
+	}
+
+	sprintf(result, "{\"TransactionNr\": %s,\"Operation\": \"ProvideValue\",\"ValueMetadataId\": \"%s\",\"Timestamp\": %s,\"Value\": \"%s\"}\r\n" , transaction_nr, id, timestamp, data);
+
+	return 1;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// build api command - get time
+int build_get_time(char * result, char * transaction_nr)
+{
+	if (strcmp(transaction_nr, "") == 0)
+	{
+		return 0;
+	}
+
+	sprintf(result, "{\"TransactionNr\": %s,\"Operation\": \"GetTime\"}\r\n", transaction_nr);
+
+	return 1;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// build api command - get status
+int build_get_status(char * result, char * transaction_nr)
+{
+	if (strcmp(transaction_nr, "") == 0)
+	{
+		return 0;
+	}
+
+	sprintf(result, "{\"TransactionNr\": %s,\"Operation\": \"GetStatus\"}\r\n", transaction_nr);
 
 	return 1;
 }
@@ -141,7 +174,7 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id)
 	}
 
 	//+++++++++++++++++++++++++++++++++++++++++++
-	// get transaction number
+	// get valuemetadataid
 	for(uint8_t j = 1; j<number_of_tokens; j++)
 	{
 		length = t[j].end-t[j].start;
@@ -149,7 +182,7 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id)
 		memcpy(key_name, &configuration[t[j].start], length);
 
 		//+++++++++++++++++++++++++++++++++++++++
-		//search for operation
+		//search for streams
 		if(strcmp(to_lower_case(key_name),"streams") == 0)
 		{
 			j++;
@@ -216,6 +249,111 @@ uint8_t get_valueMetaDataId(char * stream_name, char * id)
 	free(t);
 
 	return false;
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// parse get time receive command
+uint64_t parse_get_time(char * data, uint16_t cmd_len)
+{
+	uint16_t number_of_tokens = 0;		// number of tokens
+	jsmn_parser p;						// parser
+	jsmntok_t *t; 						// tokens
+	char * key_name;					// object key name
+	uint8_t length;						// length of key name
+	uint64_t received_timestamp = 0;	// received unix timestamp
+
+	t = calloc(1024,sizeof(jsmntok_t));
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// Initial start token
+	p.pos = 0;
+	p.toknext = 0;
+	p.toksuper = -1;
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// Get tokens by parsing json received text
+	number_of_tokens = jsmn_parse(&p, data, cmd_len, t, 1024);
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// invalid operation by less than 4 tokens
+	if(number_of_tokens < 4 || number_of_tokens > 1024)
+	{
+		free(t);
+		return false;
+	}
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// get unix timestamp in nanoseconds
+	for(uint8_t j = 1; j<number_of_tokens; j++)
+	{
+		length = t[j].end-t[j].start;
+		key_name = calloc(length+1, sizeof(char));
+		memcpy(key_name, &data[t[j].start], length);
+
+		//+++++++++++++++++++++++++++++++++++++++
+		// search for unix timestamp
+		if(strcmp(to_lower_case(key_name), "timestamp") == 0)
+		{
+			received_timestamp = (uint64_t)strtoull(&data[(t[j+1].start)], NULL, 0);
+		}
+		free(key_name);
+	}
+	free(t);
+
+	return received_timestamp;
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// parse get status
+uint8_t parse_get_status(char * data, uint16_t cmd_len)
+{
+	uint16_t number_of_tokens = 0;		// number of tokens
+	jsmn_parser p;						// parser
+	jsmntok_t *t; 						// tokens
+	char * key_name;					// object key name
+	uint8_t length;						// length of key name
+	uint8_t received_connection_status = 0;	// received connection status
+
+	t = calloc(1024,sizeof(jsmntok_t));
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// Initial start token
+	p.pos = 0;
+	p.toknext = 0;
+	p.toksuper = -1;
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// Get tokens by parsing json received text
+	number_of_tokens = jsmn_parse(&p, data, cmd_len, t, 1024);
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// invalid operation by less than 4 tokens
+	if(number_of_tokens < 4 || number_of_tokens > 1024)
+	{
+		free(t);
+		return false;
+	}
+
+	//+++++++++++++++++++++++++++++++++++++++++++
+	// get unix timestamp
+	for(uint8_t j = 1; j<number_of_tokens; j++)
+	{
+		length = t[j].end-t[j].start;
+		key_name = calloc(length+1, sizeof(char));
+		memcpy(key_name, &data[t[j].start], length);
+
+		//+++++++++++++++++++++++++++++++++++++++
+		// search for unix timestamp
+		if(strcmp(to_lower_case(key_name), "connectionstatus") == 0)
+		{
+			received_connection_status = (uint32_t)strtoull(&data[(t[j+1].start)], NULL, 0);
+		}
+		free(key_name);
+	}
+	free(t);
+
+	return received_connection_status;
+
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
