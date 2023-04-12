@@ -38,7 +38,7 @@ int build_provide_value(char * result, char * transaction_nr, char * id, char * 
 * The return value is '1' if success or '0' if the timestamp is wrong.
 
 ## get time
-To send the get status command to the Tributech OEM you have to build the getStatus command.
+To send the get_time command to the Tributech OEM you have to build the getTime command.
 ```C
 int build_get_time(char * result, char * transaction_nr)
 ```
@@ -47,7 +47,7 @@ int build_get_time(char * result, char * transaction_nr)
 * The return value is '1' if success or '0' if the transaction_nr is wrong.
 
 ## get status
-To send the get status command to the Tributech OEM you have to build the getStatus command.
+To send the get_status command to the Tributech OEM you have to build the getStatus command.
 ```C
 int build_get_status(char * result, char * transaction_nr);
 ```
@@ -90,7 +90,7 @@ uint8_t parse_get_status(char * data, uint16_t cmd_len);
 ```
 * The parameter 'data' is the response of the oem module.
 * The parameter 'cmd_len' is the length of the response message.
-* The return value represents the connection status of the OEM and can be either 0 = offline, 1 = online, 2= subscribed to the node. the full OEM functionalities are only available if the connection status shows 2.
+* The return value represents the connection status of the OEM and can be either 0 = offline, 1 = online, 2 = subscribed to the node. The full OEM functionalities are only available if the connection status shows 2.
 
 ## increase the transaction number
 This functions increases the 'transaction_nr_dec' by one and converts it to string 'transaction_nr_string'.
